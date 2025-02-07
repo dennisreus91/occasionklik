@@ -1,0 +1,7 @@
+# Python bestanden die niet naar GitHub moeten
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
