@@ -24,13 +24,15 @@ def chat():
     data = request.json
     print("🚀 Ontvangen data van Landbot:", data)  # 👉 Logt de binnenkomende data
 
-    user_id = data.get('user_id', 'default')  
-    user_message = data.get('message', '').strip()  # 🛑 Zorgt ervoor dat lege berichten niet worden verzonden
+    user_id = data.get('user_id', 'default')
+    user_message = data.get('message')
 
-    # 🚨 Controleer of het bericht leeg is
+    # 🚨 Controleer of het bericht leeg of None is
     if not user_message:
         print("⚠️ Leeg bericht ontvangen, antwoord niet mogelijk.")  # 👉 Logt fout
         return jsonify({"error": "Geen geldige invoer ontvangen. Stel een vraag over een auto."}), 400
+    else:
+        user_message = user_message.strip()
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
