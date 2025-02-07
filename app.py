@@ -22,8 +22,15 @@ def chat():
     De AI is getraind als een ervaren autoverkoper.
     """
     data = request.json
-    user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
-    user_message = data.get('message', '')
+    print("🚀 Ontvangen data van Landbot:", data)  # 👉 Logt de binnenkomende data
+
+    user_id = data.get('user_id', 'default')  
+    user_message = data.get('message', '').strip()  # 🛑 Zorgt ervoor dat lege berichten niet worden verzonden
+
+    # 🚨 Controleer of het bericht leeg is
+    if not user_message:
+        print("⚠️ Leeg bericht ontvangen, antwoord niet mogelijk.")  # 👉 Logt fout
+        return jsonify({"error": "Geen geldige invoer ontvangen. Stel een vraag over een auto."}), 400
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -59,9 +66,13 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": ai_response})
+        print("✅ AI-reactie:", ai_response)  # 👉 Logt AI-respons
+
+        return jsonify({"ai_response": ai_response})
     else:
-        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
+        error_details = response.text
+        print("❌ OpenAI API-fout:", error_details)  # 👉 Logt API-fouten
+        return jsonify({"error": "OpenAI API-fout", "details": error_details}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
