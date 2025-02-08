@@ -1,3 +1,24 @@
+from flask import Flask, request, jsonify
+import requests
+from dotenv import load_dotenv
+import os
+from flask_cors import CORS
+
+# ✅ Laad de OpenAI API Key vanuit .env
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# ✅ Flask-app instellen
+app = Flask(__name__)  # Zorg ervoor dat Flask correct is geïnitialiseerd
+CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
+
+# ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
+user_sessions = {}
+
+@app.route('/')
+def home():
+    return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """
@@ -6,18 +27,17 @@ def chat():
     """
     data = request.get_json()
 
-    # ✅ Controleer of de request JSON geldig is
+    # ✅ Controleer of de request JSON correct is
     if not data:
         return jsonify({"error": "Ongeldige of lege JSON ontvangen"}), 400
 
     user_id = data.get('user_id', 'default')
-    user_message = data.get('message', '')
+    user_message = data.get('message', '').strip()
+    chat_history = data.get('chat_history', '')
 
     # ✅ Controleer of het bericht leeg is
-    if not isinstance(user_message, str) or user_message.strip() == "":
+    if not isinstance(user_message, str) or user_message == "":
         return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
-
-    chat_history = data.get('chat_history', '')
 
     # ✅ Als de gebruiker nieuw is, maak een nieuwe sessie aan
     if user_id not in user_sessions:
@@ -56,3 +76,6 @@ def chat():
         return jsonify({"response": ai_response, "chat_history": chat_history + " | " + user_message})
     else:
         return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
+
+if __name__ == '__main__':
+    app.run(debug=True)
