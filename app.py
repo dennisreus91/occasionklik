@@ -29,17 +29,16 @@ def chat():
         data = request.get_json()
 
         # ✅ Controleer of JSON correct is ontvangen
-        if data is None:
+        if data is None or 'message' not in data:
             return jsonify({"error": "Geen geldige JSON ontvangen. Controleer je verzoek."}), 400
 
         user_id = data.get('user_id', 'default')
-        user_message = data.get('message', '')
-
-        # ✅ Controleer of message een string is en niet leeg
-        if not isinstance(user_message, str) or user_message.strip() == "":
-            return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
-
+        user_message = data['message'].strip()  # ✅ Haal de gebruikersvraag correct op
         chat_history = data.get('chat_history', '')
+
+        # ✅ Controleer of het bericht leeg is
+        if not isinstance(user_message, str) or user_message == "":
+            return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
 
         # ✅ Als de gebruiker nieuw is, maak een nieuwe sessie aan
         if user_id not in user_sessions:
@@ -63,7 +62,7 @@ def chat():
 
         payload = {
             "model": "gpt-4o-mini",
-            "messages": user_sessions[user_id],
+            "messages": user_sessions[user_id],  # ✅ Stuur volledige gespreksgeschiedenis mee
             "temperature": 0.7
         }
 
