@@ -29,16 +29,17 @@ def chat():
         data = request.get_json()
 
         # ✅ Controleer of JSON correct is ontvangen
-        if data is None or 'message' not in data:
+        if not data:
             return jsonify({"error": "Geen geldige JSON ontvangen. Controleer je verzoek."}), 400
 
         user_id = data.get('user_id', 'default')
-        user_message = data['message'].strip()  # ✅ Haal de gebruikersvraag correct op
-        chat_history = data.get('chat_history', '')
+        user_message = data.get('message', '')
 
-        # ✅ Controleer of het bericht leeg is
-        if not isinstance(user_message, str) or user_message == "":
+        # ✅ Controleer of het bericht leeg is of None
+        if not isinstance(user_message, str) or user_message.strip() == "":
             return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
+
+        chat_history = data.get('chat_history', '')
 
         # ✅ Als de gebruiker nieuw is, maak een nieuwe sessie aan
         if user_id not in user_sessions:
