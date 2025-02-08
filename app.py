@@ -28,7 +28,11 @@ def chat():
     """
     data = request.json
     user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
-    user_message = data.get('message', '')
+    user_message = data.get('message', '').strip()
+
+    # ✅ Controleer of het bericht leeg is
+    if not user_message:
+        return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
