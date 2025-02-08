@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 
-# ✅ Laad de API Key vanuit .env
+# ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -15,6 +15,11 @@ CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
 # ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
+# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
+@app.route('/')
+def home():
+    return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """
@@ -22,26 +27,17 @@ def chat():
     De AI is getraind als een ervaren autoverkoper.
     """
     data = request.json
-    print("🚀 Ontvangen data van Landbot:", data)  # 👉 Logt de binnenkomende data
-
-    user_id = data.get('user_id', 'default')
-    user_message = data.get('message')
-
-    # 🚨 Controleer of het bericht leeg of None is
-    if not user_message:
-        print("⚠️ Leeg bericht ontvangen, antwoord niet mogelijk.")  # 👉 Logt fout
-        return jsonify({"error": "Geen geldige invoer ontvangen. Stel een vraag over een auto."}), 400
-    else:
-        user_message = user_message.strip()
+    user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
+    user_message = data.get('message', '')
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
         user_sessions[user_id] = [
-            {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring. 
-            Je helpt klanten bij het vinden van hun ideale tweedehands auto door hen vragen te stellen over hun wensen en situatie. 
-            Je introduceert jezelf vriendelijk en stelt enkele beginvragen zoals budget, type auto en gebruiksdoel. 
-            Als klanten niet genoeg details geven, stel je vervolgvragen. Zodra er voldoende informatie is, adviseer je een specifieke auto 
-            inclusief merk, model, type en een bouwjaar. 
+            {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring.
+            Je helpt klanten bij het vinden van hun ideale tweedehands auto door hen vragen te stellen over hun wensen en situatie.
+            Je introduceert jezelf vriendelijk en stelt enkele beginvragen zoals budget, type auto en gebruiksdoel.
+            Als klanten niet genoeg details geven, stel je vervolgvragen. Zodra er voldoende informatie is, adviseer je een specifieke auto
+            inclusief merk, model, type en een bouwjaar.
             Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
         ]
     
@@ -68,13 +64,9 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        print("✅ AI-reactie:", ai_response)  # 👉 Logt AI-respons
-
-        return jsonify({"ai_response": ai_response})
+        return jsonify({"response": ai_response})
     else:
-        error_details = response.text
-        print("❌ OpenAI API-fout:", error_details)  # 👉 Logt API-fouten
-        return jsonify({"error": "OpenAI API-fout", "details": error_details}), response.status_code
+        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
