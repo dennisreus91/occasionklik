@@ -15,7 +15,6 @@ CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
 # ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
-# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
@@ -27,14 +26,15 @@ def chat():
     De AI is getraind als een ervaren autoverkoper.
     """
     data = request.json
-    user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
+    user_id = data.get('user_id', 'default')  
     user_message = data.get('message', '').strip()
+    chat_history = data.get('chat_history', '')
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
         return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
 
-    # ✅ Gespreksgeschiedenis ophalen of aanmaken
+    # ✅ Als de gebruiker nieuw is, maak een nieuwe sessie aan
     if user_id not in user_sessions:
         user_sessions[user_id] = [
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring.
@@ -44,11 +44,11 @@ def chat():
             inclusief merk, model, type en een bouwjaar.
             Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
         ]
-    
-    # ✅ Voeg de gebruikersvraag toe aan de chatgeschiedenis
+
+    # ✅ Voeg de nieuwe vraag toe aan de gespreksgeschiedenis
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
-    # ✅ OpenAI API-aanroep met chatgeschiedenis
+    # ✅ OpenAI API-aanroep met volledige chatgeschiedenis
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -64,11 +64,11 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
-        
+
         # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": ai_response})
+        return jsonify({"response": ai_response, "chat_history": chat_history + " | " + user_message})
     else:
         return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
 
