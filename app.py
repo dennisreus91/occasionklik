@@ -78,7 +78,9 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": ai_response})
+        clean_response = ai_response.replace("\n", "<br>")  # Converteer nieuwe regels naar HTML-breaks
+        return jsonify({"response": clean_response})
+
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
