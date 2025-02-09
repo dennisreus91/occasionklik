@@ -29,13 +29,13 @@ def chat():
         data = request.get_json()
 
         # ✅ Controleer of JSON correct is ontvangen
-        if not data:
+        if data is None:
             return jsonify({"error": "Geen geldige JSON ontvangen. Controleer je verzoek."}), 400
 
         user_id = data.get('user_id', 'default')
         user_message = data.get('message', '')
 
-        # ✅ Controleer of het bericht leeg is of None
+        # ✅ Controleer of message een string is en niet leeg
         if not isinstance(user_message, str) or user_message.strip() == "":
             return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
 
@@ -63,7 +63,7 @@ def chat():
 
         payload = {
             "model": "gpt-4o-mini",
-            "messages": user_sessions[user_id],  # ✅ Stuur volledige gespreksgeschiedenis mee
+            "messages": user_sessions[user_id],
             "temperature": 0.7
         }
 
