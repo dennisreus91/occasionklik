@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 # ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
-# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
+# ✅ Homepage route
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
@@ -75,11 +75,21 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
-        user_sessions[user_id].append({"role": "assistant", "content": ai_response})
+        # ✅ Verwijder onnodige witruimte en nieuwe regels
+        clean_response = ai_response.strip()
 
-        clean_response = ai_response.replace("\n", "<br>")  # Converteer nieuwe regels naar HTML-breaks
-        return jsonify({"response": clean_response})
+        # ✅ HTML-opmaak voor professionele weergave in Landbot
+        formatted_response = f"""
+        <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
+            <p><b>🔹 AI Autoverkoper:</b></p>
+            <p>{clean_response.replace("\n", "<br>")}</p>
+        </div>
+        """
+
+        # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
+        user_sessions[user_id].append({"role": "assistant", "content": clean_response})
+
+        return formatted_response  # ⬅️ Verzend direct als HTML (geen JSON)
 
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
