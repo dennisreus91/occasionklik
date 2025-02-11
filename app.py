@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 import requests
 from dotenv import load_dotenv
 import os
@@ -39,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify({"response": "Bericht mag niet leeg zijn"}), 400
+        return "Bericht mag niet leeg zijn", 400  # ✅ Stuur platte tekst zonder JSON
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -79,7 +79,7 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Verwijder overbodige newlines en vervang markdown (`###`) door vetgedrukte HTML-tags
+        # ✅ Verbeterde opmaak zonder markdown en JSON-fouten
         clean_response = ai_response.strip()\
             .replace("\n\n", "<br><br>")\
             .replace("\n", " ")\
@@ -88,16 +88,13 @@ def chat():
             .replace("\n- ", "<br>🔹 ")\
             .replace("•", "🔹")
 
-        # ✅ Zorg voor een eenvoudige, gebruiksvriendelijke chat-uitvoer zonder JSON-structuur
-        formatted_response = clean_response
-
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": formatted_response})  # ✅ JSON blijft behouden, maar netjes geformatteerd
+        return clean_response  # ✅ Stuur alleen de tekst terug, geen JSON!
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
+        return f"Er is een fout opgetreden: {response.text}", response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
