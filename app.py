@@ -78,14 +78,11 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Formatteer de AI-reactie als HTML zonder conflicten met Landbot
-        clean_response = ai_response.replace("\n", "<br>").replace("•", "🔹")
-        formatted_response = f"""
-        <div style='background:#f4f4f4; padding:12px; border-radius:10px; font-family:Arial, sans-serif; line-height:1.6;'>
-            <b>🤖 AI Autoverkoper:</b><br><br>
-            {clean_response}
-        </div>
-        """
+        # ✅ Verwijder overbodige newlines en vervang met correcte HTML-breaks
+        clean_response = ai_response.strip().replace("\n\n", "<br><br>").replace("\n", " ").replace("•", "🔹")
+
+        # ✅ Zorg voor een eenvoudige, gebruiksvriendelijke chat-uitvoer
+        formatted_response = f"{clean_response}"
 
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
