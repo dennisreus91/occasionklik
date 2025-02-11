@@ -39,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify({"text": "Bericht mag niet leeg zijn"}), 400  # ✅ Stuur geldige JSON-response
+        return jsonify("Bericht mag niet leeg zijn"), 400  # ✅ Stuur geldige JSON-response zonder extra keys
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -91,7 +91,10 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"text": clean_response})  # ✅ JSON blijft behouden, maar Landbot toont alleen de AI-reactie
+        return jsonify(clean_response)  # ✅ Stuurt alleen de AI-reactie terug als JSON zonder extra keys
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return jsonify({"text": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), response.sta
+        return jsonify("Er is een fout opgetreden bij de AI. Probeer het later opnieuw."), response.status_code
+
+if __name__ == '__main__':
+    app.run(debug=True)
