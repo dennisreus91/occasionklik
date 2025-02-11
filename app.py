@@ -39,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify({"error": "Bericht mag niet leeg zijn"}), 400
+        return jsonify("Bericht mag niet leeg zijn"), 400
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -49,6 +49,7 @@ def chat():
             Je introduceert jezelf vriendelijk en stelt enkele beginvragen zoals budget, type auto en gebruiksdoel.
             Als klanten niet genoeg details geven, stel je vervolgvragen. Zodra er voldoende informatie is, adviseer je een specifieke auto
             inclusief merk, model, type en een bouwjaar.
+            Je mag emoji's gebruiken om de chat menselijker te maken, maar houd het professioneel.
             Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
         ]
 
@@ -81,16 +82,16 @@ def chat():
         # ✅ Verwijder overbodige newlines en vervang met correcte HTML-breaks
         clean_response = ai_response.strip().replace("\n\n", "<br><br>").replace("\n", " ").replace("•", "🔹")
 
-        # ✅ Zorg voor een eenvoudige, gebruiksvriendelijke chat-uitvoer
-        formatted_response = f"{clean_response}"
+        # ✅ Zorg voor een eenvoudige, gebruiksvriendelijke chat-uitvoer zonder JSON-structuur
+        formatted_response = clean_response
 
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": formatted_response})
+        return formatted_response  # ⬅️ Direct schone tekst zonder JSON-wrapper
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
+        return f"Er is een fout opgetreden: {response.text}", response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
