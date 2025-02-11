@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 import logging
+from markdown import markdown
 
 # ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
@@ -19,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 # ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
-# ✅ Homepage route
+# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
@@ -51,11 +52,14 @@ def chat():
             inclusief merk, model, type en een bouwjaar.
             Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
         ]
-    
-    # ✅ Voeg de gebruikersvraag toe aan de chatgeschiedenis
+
+    # ✅ Voeg de gebruikersvraag toe aan de gespreksgeschiedenis
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
-    # ✅ OpenAI API-aanroep met chatgeschiedenis
+    # ✅ Log de volledige gespreksgeschiedenis voor debuggen
+    logging.info(f"📝 Huidige gespreksgeschiedenis voor {user_id}: {user_sessions[user_id]}")
+
+    # ✅ OpenAI API-aanroep met volledige gespreksgeschiedenis
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -63,7 +67,7 @@ def chat():
 
     payload = {
         "model": "gpt-4o-mini",
-        "messages": user_sessions[user_id],
+        "messages": user_sessions[user_id],  # Stuur de volledige gespreksgeschiedenis mee
         "temperature": 0.7
     }
 
@@ -75,22 +79,18 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Verwijder onnodige witruimte en nieuwe regels
-        clean_response = ai_response.strip()
-
-        # ✅ HTML-opmaak voor professionele weergave in Landbot
+        # ✅ Formatteer de AI-reactie met HTML en Markdown
+        clean_response = markdown(ai_response).replace("<ul>", "<ul style='list-style-type:🔹;'>")
         formatted_response = f"""
-        <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
-            <p><b>🔹 AI Autoverkoper:</b></p>
-            <p>{clean_response.replace("\n", "<br>")}</p>
+        <div style='background:#f4f4f4; padding:12px; border-radius:10px; font-family:Arial, sans-serif;'>
+            <b>🤖 AI Autoverkoper:</b><br><br>
+            {clean_response}
         </div>
         """
+        # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
+        user_sessions[user_id].append({"role": "assistant", "content": formatted_response})
 
-        # ✅ Voeg AI-reactie toe aan de chatgeschiedenis
-        user_sessions[user_id].append({"role": "assistant", "content": clean_response})
-
-        return formatted_response  # ⬅️ Verzend direct als HTML (geen JSON)
-
+        return jsonify({"response": formatted_response})
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
