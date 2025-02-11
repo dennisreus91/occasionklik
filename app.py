@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import requests
 from dotenv import load_dotenv
 import os
@@ -39,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return "Bericht mag niet leeg zijn", 400  # ✅ Stuur platte tekst zonder JSON
+        return jsonify({"text": "Bericht mag niet leeg zijn"}), 400  # ✅ Stuur platte tekst als JSON terug
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -91,10 +91,10 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return clean_response  # ✅ Stuur alleen de tekst terug, geen JSON!
+        return jsonify({"text": clean_response})  # ✅ JSON blijft behouden, maar Landbot toont alleen de tekst
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return f"Er is een fout opgetreden: {response.text}", response.status_code
+        return jsonify({"text": f"Er is een fout opgetreden: {response.text}"}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
