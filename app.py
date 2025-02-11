@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 import logging
-from markdown import markdown
 
 # ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
@@ -79,16 +78,17 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Formatteer de AI-reactie met HTML en Markdown
-        clean_response = markdown(ai_response).replace("<ul>", "<ul style='list-style-type:🔹;'>")
+        # ✅ Formatteer de AI-reactie als HTML zonder conflicten met Landbot
+        clean_response = ai_response.replace("\n", "<br>").replace("•", "🔹")
         formatted_response = f"""
-        <div style='background:#f4f4f4; padding:12px; border-radius:10px; font-family:Arial, sans-serif;'>
+        <div style='background:#f4f4f4; padding:12px; border-radius:10px; font-family:Arial, sans-serif; line-height:1.6;'>
             <b>🤖 AI Autoverkoper:</b><br><br>
             {clean_response}
         </div>
         """
+
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
-        user_sessions[user_id].append({"role": "assistant", "content": formatted_response})
+        user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
         return jsonify({"response": formatted_response})
     else:
