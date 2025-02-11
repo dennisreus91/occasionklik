@@ -39,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify("Bericht mag niet leeg zijn"), 400
+        return jsonify({"response": "Bericht mag niet leeg zijn"}), 400
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -79,8 +79,14 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Verwijder overbodige newlines en vervang met correcte HTML-breaks
-        clean_response = ai_response.strip().replace("\n\n", "<br><br>").replace("\n", " ").replace("•", "🔹")
+        # ✅ Verwijder overbodige newlines en vervang markdown (`###`) door vetgedrukte HTML-tags
+        clean_response = ai_response.strip()\
+            .replace("\n\n", "<br><br>")\
+            .replace("\n", " ")\
+            .replace("### ", "<b>")\
+            .replace("###", "</b>")\
+            .replace("\n- ", "<br>🔹 ")\
+            .replace("•", "🔹")
 
         # ✅ Zorg voor een eenvoudige, gebruiksvriendelijke chat-uitvoer zonder JSON-structuur
         formatted_response = clean_response
@@ -88,10 +94,10 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return formatted_response  # ⬅️ Direct schone tekst zonder JSON-wrapper
+        return jsonify({"response": formatted_response})  # ✅ JSON blijft behouden, maar netjes geformatteerd
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return f"Er is een fout opgetreden: {response.text}", response.status_code
+        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
