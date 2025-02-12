@@ -16,7 +16,7 @@ CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
 # ✅ Logging instellen voor debug-informatie
 logging.basicConfig(level=logging.INFO)
 
-# ✅ Opslag voor gespreksgeschiedenis, samenvatting en auto-advies per gebruiker
+# ✅ Opslag voor gespreksgeschiedenis en auto-advies per gebruiker
 user_sessions = {}
 user_summaries = {}
 user_car_advice = {}  # ✅ Hier slaan we het geadviseerde model op per gebruiker
@@ -29,21 +29,21 @@ LAST_MESSAGES_AFTER_SUMMARY = 5
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
 
-# ✅ Functie om een dynamische Gaspedaal.nl-link te genereren
+# ✅ Dynamische Gaspedaal.nl-link generatie zonder bevestiging
 def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_type):
     """
     Genereert een dynamische link naar Gaspedaal.nl op basis van de auto-voorkeuren.
     """
     base_url = "https://www.gaspedaal.nl"
 
-    # ✅ Zorg ervoor dat merk en model correct in kleine letters worden omgezet
+    # ✅ Merk en model in kleine letters en URL-vriendelijk
     brand = brand.lower().replace(" ", "-")  
     model = model.lower().replace(" ", "-")
 
-    # ✅ Zet transmissie om naar juiste waarde
+    # ✅ Transmissie omzetten naar juiste waarde
     trns = "14" if transmission.lower() == "automaat" else "15"
 
-    # ✅ Zet brandstoftype correct om naar Gaspedaal URL
+    # ✅ Brandstoftype omzetten naar juiste URL-waarde
     fuel_mapping = {
         "benzine": "benzine",
         "diesel": "diesel",
@@ -61,7 +61,7 @@ def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_t
 def chat():
     """
     Voert een doorlopend gesprek met de gebruiker via AI.
-    De AI is getraind als een ervaren autoverkoper.
+    De AI is getraind als een ervaren autoverkoper en genereert automatisch een Gaspedaal.nl-link.
     """
     data = request.json
     user_id = data.get('user_id', 'default')
@@ -76,23 +76,15 @@ def chat():
     if user_id not in user_sessions:
         user_sessions[user_id] = [
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper. 
-            Je stelt slimme vragen en adviseert uiteindelijk **een specifiek merk, model en uitvoering**.
-            Bijvoorbeeld: "Op basis van jouw wensen raad ik de **Volkswagen Tiguan 1.5 TSI Highline 2021** aan."
-            Zorg ervoor dat je altijd een **specifiek model met bouwjaar en uitvoering** noemt. 
-            Vraag de gebruiker altijd om bevestiging voordat je een link deelt."""}
+            Je stelt slimme vragen en adviseert een **specifiek merk, model en uitvoering**.
+            Bijvoorbeeld: "Ik raad de **Volkswagen Tiguan 1.5 TSI Highline 2021, automaat, benzine** aan."
+            Geef korte, professionele en duidelijke antwoorden.
+            Zodra een auto geadviseerd wordt, geef je direct de bijbehorende Gaspedaal.nl-link."""}
         ]
         user_summaries[user_id] = ""
         user_car_advice[user_id] = None  # ✅ Auto-advies wordt hier opgeslagen
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
-
-    # ✅ Controleer of de gebruiker het auto-advies bevestigt
-    if user_car_advice[user_id] and any(word in user_message.lower() for word in ["ja", "oké", "lijkt me goed", "dat zoek ik"]):
-        car = user_car_advice[user_id]
-        gaspedaal_url = generate_gaspedaal_link(car["brand"], car["model"], car["min_year"], car["max_km"], car["transmission"], car["fuel"])
-
-        ai_response = f"🚗 Mooi! Hier is jouw auto op Gaspedaal.nl: [**Klik hier om de auto te bekijken**]({gaspedaal_url}) 🚀"
-        return jsonify({"response": ai_response})
 
     # ✅ Als de sessie nog kort is, stuur volledige chatgeschiedenis
     if len(user_sessions[user_id]) <= MAX_HISTORY_BEFORE_SUMMARY:
@@ -147,6 +139,25 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
+
+        # ✅ Controleer of AI een auto-advies geeft en genereer direct de link
+        if "Ik raad de" in ai_response:
+            words = ai_response.split()
+            try:
+                brand = words[words.index("de") + 2]  
+                model = words[words.index("de") + 3]
+                budget = 30000  # Placeholder, haal deze uit de chat
+                min_year = 2020
+                max_km = 80000
+                transmission = "automaat" if "automaat" in ai_response.lower() else "handgeschakeld"
+                fuel = "benzine" if "benzine" in ai_response.lower() else "diesel" if "diesel" in ai_response.lower() else "hybride" if "hybride" in ai_response.lower() else "elektrisch"
+
+                gaspedaal_url = generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel)
+
+                ai_response += f"\n\n🚗 **Bekijk deze auto op Gaspedaal.nl:** [**Klik hier**]({gaspedaal_url}) 🚀"
+            except ValueError:
+                pass
+
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
         return jsonify({"response": ai_response})
     else:
