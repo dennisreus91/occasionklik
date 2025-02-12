@@ -30,18 +30,15 @@ def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
 
 # ✅ Functie voor het genereren van de correcte Gaspedaal.nl-link
-def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_type):
+def generate_gaspedaal_link(brand, model, fuel_type):
     """
-    Genereert een correcte dynamische link naar Gaspedaal.nl met de juiste parameters.
+    Genereert een correcte dynamische link naar Gaspedaal.nl met merk, model en brandstofsoort.
     """
     base_url = "https://www.gaspedaal.nl"
 
     # ✅ Merk en model correct in URL-formaat zetten
     brand = brand.lower().replace(" ", "-")  
     model = model.lower().replace(" ", "-")
-
-    # ✅ Transmissie correct omzetten
-    trns = "14" if transmission.lower() == "automaat" else "15"
 
     # ✅ Brandstoftype correct verwerken
     fuel_mapping = {
@@ -53,7 +50,7 @@ def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_t
     fuel_url = fuel_mapping.get(fuel_type.lower(), "benzine")  # Default naar benzine als onbekend
 
     # ✅ Eindelijke zoek-URL genereren
-    search_url = f"{base_url}/{brand}/{model}/{fuel_url}?trns={trns}&bmin={min_year}&kmax={max_km}&srt=df-a"
+    search_url = f"{base_url}/{brand}/{model}/{fuel_url}?srt=df-a"
 
     return search_url
 
@@ -76,8 +73,8 @@ def chat():
     if user_id not in user_sessions:
         user_sessions[user_id] = [
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper. 
-            Je stelt slimme vragen en adviseert een **specifiek merk, model en uitvoering**.
-            Bijvoorbeeld: "Ik raad de **Volkswagen Tiguan 1.5 TSI Highline 2021, automaat, benzine** aan."
+            Je stelt slimme vragen en adviseert een **specifiek merk, model en brandstofsoort**.
+            Bijvoorbeeld: "Ik raad de **Peugeot 2008, benzine** aan."
             Zodra een auto geadviseerd wordt, geef je direct de bijbehorende Gaspedaal.nl-link in de volgende vorm:
             "🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**](de dynamische link) 🚀"
             """}
@@ -109,13 +106,12 @@ def chat():
             try:
                 brand = words[words.index("de") + 2]  
                 model = words[words.index("de") + 3]
-                budget = 30000  # Placeholder, haal deze uit de chat
-                min_year = 2020
-                max_km = 80000
-                transmission = "automaat" if "automaat" in ai_response.lower() else "handgeschakeld"
-                fuel = "benzine" if "benzine" in ai_response.lower() else "diesel" if "diesel" in ai_response.lower() else "hybride" if "hybride" in ai_response.lower() else "elektrisch"
+                fuel = "benzine" if "benzine" in ai_response.lower() else \
+                       "diesel" if "diesel" in ai_response.lower() else \
+                       "hybride" if "hybride" in ai_response.lower() else \
+                       "elektrisch"
 
-                gaspedaal_url = generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel)
+                gaspedaal_url = generate_gaspedaal_link(brand, model, fuel)
 
                 ai_response += f"\n\n🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**]({gaspedaal_url}) 🚀"
             except ValueError:
