@@ -29,21 +29,21 @@ LAST_MESSAGES_AFTER_SUMMARY = 5
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
 
-# ✅ Dynamische Gaspedaal.nl-link generatie zonder bevestiging
+# ✅ Functie voor het genereren van de correcte Gaspedaal.nl-link
 def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_type):
     """
-    Genereert een dynamische link naar Gaspedaal.nl op basis van de auto-voorkeuren.
+    Genereert een correcte dynamische link naar Gaspedaal.nl met de juiste parameters.
     """
     base_url = "https://www.gaspedaal.nl"
 
-    # ✅ Merk en model in kleine letters en URL-vriendelijk
+    # ✅ Merk en model correct in URL-formaat zetten
     brand = brand.lower().replace(" ", "-")  
     model = model.lower().replace(" ", "-")
 
-    # ✅ Transmissie omzetten naar juiste waarde
+    # ✅ Transmissie correct omzetten
     trns = "14" if transmission.lower() == "automaat" else "15"
 
-    # ✅ Brandstoftype omzetten naar juiste URL-waarde
+    # ✅ Brandstoftype correct verwerken
     fuel_mapping = {
         "benzine": "benzine",
         "diesel": "diesel",
@@ -52,7 +52,7 @@ def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_t
     }
     fuel_url = fuel_mapping.get(fuel_type.lower(), "benzine")  # Default naar benzine als onbekend
 
-    # ✅ Genereer de uiteindelijke zoek-URL
+    # ✅ Eindelijke zoek-URL genereren
     search_url = f"{base_url}/{brand}/{model}/{fuel_url}?trns={trns}&bmin={min_year}&kmax={max_km}&srt=df-a"
 
     return search_url
@@ -61,7 +61,7 @@ def generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel_t
 def chat():
     """
     Voert een doorlopend gesprek met de gebruiker via AI.
-    De AI is getraind als een ervaren autoverkoper en genereert automatisch een Gaspedaal.nl-link.
+    Zodra een auto-advies is gegeven, wordt automatisch een Gaspedaal.nl-link gedeeld.
     """
     data = request.json
     user_id = data.get('user_id', 'default')
@@ -78,51 +78,14 @@ def chat():
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper. 
             Je stelt slimme vragen en adviseert een **specifiek merk, model en uitvoering**.
             Bijvoorbeeld: "Ik raad de **Volkswagen Tiguan 1.5 TSI Highline 2021, automaat, benzine** aan."
-            Geef korte, professionele en duidelijke antwoorden.
-            Zodra een auto geadviseerd wordt, geef je direct de bijbehorende Gaspedaal.nl-link."""}
+            Zodra een auto geadviseerd wordt, geef je direct de bijbehorende Gaspedaal.nl-link in de volgende vorm:
+            "🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**](de dynamische link) 🚀"
+            """}
         ]
         user_summaries[user_id] = ""
         user_car_advice[user_id] = None  # ✅ Auto-advies wordt hier opgeslagen
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
-
-    # ✅ Als de sessie nog kort is, stuur volledige chatgeschiedenis
-    if len(user_sessions[user_id]) <= MAX_HISTORY_BEFORE_SUMMARY:
-        messages_to_send = user_sessions[user_id]
-    else:
-        if not user_summaries[user_id]:  
-            summary_prompt = """Vat dit gesprek kort samen en bewaar alleen de belangrijkste informatie:
-            - Budget
-            - Type auto
-            - Gebruiksdoel
-            - Maximale kilometerstand
-            - Bouwjaar
-            - Voorkeur voor opties (navigatie, stoelverwarming, etc.)
-            - Merk en model voorkeuren."""
-
-            history_text = "\n".join([msg["content"] for msg in user_sessions[user_id]])
-
-            summary_payload = {
-                "model": "gpt-4o-mini",
-                "messages": [
-                    {"role": "system", "content": summary_prompt},
-                    {"role": "user", "content": history_text}
-                ],
-                "temperature": 0.5
-            }
-
-            summary_response = requests.post("https://api.openai.com/v1/chat/completions", headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {OPENAI_API_KEY}"
-            }, json=summary_payload)
-
-            if summary_response.status_code == 200:
-                user_summaries[user_id] = summary_response.json()["choices"][0]["message"]["content"]
-                logging.info(f"✅ Samenvatting gegenereerd voor {user_id}: {user_summaries[user_id]}")
-
-        messages_to_send = [
-            {"role": "system", "content": f"Samenvatting van eerdere gesprekken: {user_summaries[user_id]}"}
-        ] + user_sessions[user_id][-LAST_MESSAGES_AFTER_SUMMARY:]
 
     headers = {
         "Content-Type": "application/json",
@@ -131,7 +94,7 @@ def chat():
 
     payload = {
         "model": "gpt-4o-mini",
-        "messages": messages_to_send,
+        "messages": user_sessions[user_id],
         "temperature": 0.7
     }
 
@@ -154,12 +117,21 @@ def chat():
 
                 gaspedaal_url = generate_gaspedaal_link(brand, model, min_year, max_km, transmission, fuel)
 
-                ai_response += f"\n\n🚗 **Bekijk deze auto op Gaspedaal.nl:** [**Klik hier**]({gaspedaal_url}) 🚀"
+                ai_response += f"\n\n🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**]({gaspedaal_url}) 🚀"
             except ValueError:
                 pass
 
-        user_sessions[user_id].append({"role": "assistant", "content": ai_response})
-        return jsonify({"response": ai_response})
+        # ✅ Verbeterde chatweergave en verwijder ongewenste tekens
+        formatted_response = ai_response.strip()\
+            .replace("\n\n", "<br><br>")\
+            .replace("\n", " ")\
+            .replace("### ", "<b>")\
+            .replace("###", "</b>")\
+            .replace("\n- ", "<br>🔹 ")\
+            .replace("•", "🔹")
+
+        user_sessions[user_id].append({"role": "assistant", "content": formatted_response})
+        return jsonify({"response": formatted_response})
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
