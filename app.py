@@ -16,14 +16,10 @@ CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
 # ✅ Logging instellen voor debug-informatie
 logging.basicConfig(level=logging.INFO)
 
-# ✅ Opslag voor gespreksgeschiedenis en samenvatting per gebruiker
+# ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
-user_summaries = {}  # ✅ Hier slaan we de samenvatting per gebruiker op
 
-# ✅ Configuratie instellingen
-MAX_HISTORY_BEFORE_SUMMARY = 15  # Tot 15 berichten wordt de volledige chatgeschiedenis meegestuurd
-LAST_MESSAGES_AFTER_SUMMARY = 5  # Na samenvatting worden de laatste 5 berichten meegestuurd
-
+# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
@@ -43,7 +39,7 @@ def chat():
 
     # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify({"response": "Bericht mag niet leeg zijn"}), 400
+        return jsonify("Bericht mag niet leeg zijn"), 400  # ✅ Stuur geldige JSON-response zonder extra keys
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
@@ -51,59 +47,19 @@ def chat():
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring.
             Je helpt klanten bij het vinden van hun ideale tweedehands auto door hen vragen te stellen over hun wensen en situatie.
             Je introduceert jezelf vriendelijk en stelt enkele beginvragen zoals budget, type auto en gebruiksdoel.
+            Als klanten niet genoeg details geven, stel je vervolgvragen. Zodra er voldoende informatie is, adviseer je een specifieke auto
+            inclusief merk, model, type en een bouwjaar.
+            Je mag emoji's gebruiken om de chat menselijker te maken, maar houd het professioneel.
             Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
         ]
-        user_summaries[user_id] = ""  # ✅ Start met een lege samenvatting
 
-    # ✅ Voeg de gebruikersvraag toe aan de sessie
+    # ✅ Voeg de gebruikersvraag toe aan de gespreksgeschiedenis
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
-    # ✅ **Bepaal welke data naar OpenAI wordt gestuurd**
-    if len(user_sessions[user_id]) <= MAX_HISTORY_BEFORE_SUMMARY:
-        # ✅ Stuur volledige gespreksgeschiedenis als het minder dan 15 berichten zijn
-        messages_to_send = user_sessions[user_id]
-    else:
-        # ✅ Maak een samenvatting als de chatgeschiedenis te lang wordt
-        if not user_summaries[user_id]:  # Alleen samenvatten als dit nog niet is gedaan
-            summary_prompt = """Vat dit gesprek kort samen en bewaar alleen de belangrijkste informatie die nodig is om een goed advies te geven.
-            Focus op:
-            - Naam van de gebruiker
-            - Budget
-            - Woonplaats
-            - Gebruik van de auto (bijvoorbeeld woon-werk, vakantie, gezin, etc.)
-            - Type auto (SUV, hatchback, station, etc.)
-            - Maximale kilometerstand
-            - Bouwjaar
-            - Voorkeur voor opties (navigatie, stoelverwarming, trekhaak, etc.)
-            - Voorkeur voor merk en model
-            - Eventuele extra wensen of belangrijke informatie."""
+    # ✅ Log de volledige gespreksgeschiedenis voor debuggen
+    logging.info(f"📝 Huidige gespreksgeschiedenis voor {user_id}: {user_sessions[user_id]}")
 
-            history_text = "\n".join([msg["content"] for msg in user_sessions[user_id]])
-
-            summary_payload = {
-                "model": "gpt-4o-mini",
-                "messages": [
-                    {"role": "system", "content": summary_prompt},
-                    {"role": "user", "content": history_text}
-                ],
-                "temperature": 0.5
-            }
-
-            summary_response = requests.post("https://api.openai.com/v1/chat/completions", headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {OPENAI_API_KEY}"
-            }, json=summary_payload)
-
-            if summary_response.status_code == 200:
-                user_summaries[user_id] = summary_response.json()["choices"][0]["message"]["content"]
-                logging.info(f"✅ Samenvatting gegenereerd voor {user_id}: {user_summaries[user_id]}")
-
-        # ✅ Gebruik de samenvatting + de laatste 5 berichten als context
-        messages_to_send = [
-            {"role": "system", "content": f"Samenvatting van eerdere gesprekken: {user_summaries[user_id]}"}
-        ] + user_sessions[user_id][-LAST_MESSAGES_AFTER_SUMMARY:]
-
-    # ✅ OpenAI API-aanroep
+    # ✅ OpenAI API-aanroep met volledige gespreksgeschiedenis
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -111,7 +67,7 @@ def chat():
 
     payload = {
         "model": "gpt-4o-mini",
-        "messages": messages_to_send,
+        "messages": user_sessions[user_id],  # Stuur de volledige gespreksgeschiedenis mee
         "temperature": 0.7
     }
 
@@ -123,7 +79,7 @@ def chat():
         # ✅ Log de AI-reactie
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
-        # ✅ Verwijder overbodige newlines en vervang markdown (`###`) door vetgedrukte HTML-tags
+        # ✅ Verbeterde opmaak zonder markdown en JSON-fouten
         clean_response = ai_response.strip()\
             .replace("\n\n", "<br><br>")\
             .replace("\n", " ")\
@@ -135,10 +91,10 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify({"response": clean_response})  # ✅ JSON blijft behouden, maar netjes geformatteerd
+        return jsonify(clean_response)  # ✅ Stuurt alleen de AI-reactie terug als JSON zonder extra keys
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return jsonify({"error": "OpenAI API-fout", "details": response.text}), response.status_code
+        return jsonify("Er is een fout opgetreden bij de AI. Probeer het later opnieuw."), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
