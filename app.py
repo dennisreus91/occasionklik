@@ -16,49 +16,18 @@ CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
 # ✅ Logging instellen voor debug-informatie
 logging.basicConfig(level=logging.INFO)
 
-# ✅ Opslag voor gespreksgeschiedenis en auto-advies per gebruiker
+# ✅ Opslag voor gespreksgeschiedenis per gebruiker
 user_sessions = {}
-user_summaries = {}
-user_car_advice = {}  # ✅ Hier slaan we het geadviseerde model op per gebruiker
-
-# ✅ Configuratie instellingen
-MAX_HISTORY_BEFORE_SUMMARY = 15
-LAST_MESSAGES_AFTER_SUMMARY = 5
 
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
 
-# ✅ Functie voor het genereren van de correcte Gaspedaal.nl-link
-def generate_gaspedaal_link(brand, model, fuel_type):
-    """
-    Genereert een correcte dynamische link naar Gaspedaal.nl met merk, model en brandstofsoort.
-    """
-    base_url = "https://www.gaspedaal.nl"
-
-    # ✅ Merk en model correct in URL-formaat zetten
-    brand = brand.lower().replace(" ", "-")  
-    model = model.lower().replace(" ", "-")
-
-    # ✅ Brandstoftype correct verwerken
-    fuel_mapping = {
-        "benzine": "benzine",
-        "diesel": "diesel",
-        "hybride": "hybride",
-        "elektrisch": "elektrisch"
-    }
-    fuel_url = fuel_mapping.get(fuel_type.lower(), "benzine")  # Default naar benzine als onbekend
-
-    # ✅ Eindelijke zoek-URL genereren
-    search_url = f"{base_url}/{brand}/{model}/{fuel_url}?srt=df-a"
-
-    return search_url
-
 @app.route('/chat', methods=['POST'])
 def chat():
     """
     Voert een doorlopend gesprek met de gebruiker via AI.
-    Zodra een auto-advies is gegeven, wordt automatisch een Gaspedaal.nl-link gedeeld.
+    Zodra een auto-advies is gegeven, genereert OpenAI de Gaspedaal.nl-link.
     """
     data = request.json
     user_id = data.get('user_id', 'default')
@@ -75,12 +44,18 @@ def chat():
             {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper. 
             Je stelt slimme vragen en adviseert een **specifiek merk, model en brandstofsoort**.
             Bijvoorbeeld: "Ik raad de **Peugeot 2008, benzine** aan."
-            Zodra een auto geadviseerd wordt, geef je direct de bijbehorende Gaspedaal.nl-link in de volgende vorm:
-            "🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**](de dynamische link) 🚀"
-            """}
+
+            Als je een auto adviseert, genereer je automatisch een **correcte en klikbare Gaspedaal.nl-link** in de volgende vorm:
+            "🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?srt=df-a) 🚀"
+
+            Waarbij je **{merk} en {model}** in kleine letters en zonder spaties omzet naar URL-vriendelijke formaten.
+            Voorbeeld:  
+            - "Peugeot 2008, benzine" → https://www.gaspedaal.nl/peugeot/2008/benzine?srt=df-a
+            - "Volkswagen Golf, diesel" → https://www.gaspedaal.nl/volkswagen/golf/diesel?srt=df-a
+            - "Toyota Yaris, hybride" → https://www.gaspedaal.nl/toyota/yaris/hybride?srt=df-a
+
+            Zorg ervoor dat de link correct is en klikbaar blijft. Formatteer het antwoord professioneel en beknopt."""}
         ]
-        user_summaries[user_id] = ""
-        user_car_advice[user_id] = None  # ✅ Auto-advies wordt hier opgeslagen
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
@@ -99,23 +74,6 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
-
-        # ✅ Controleer of AI een auto-advies geeft en genereer direct de link
-        if "Ik raad de" in ai_response:
-            words = ai_response.split()
-            try:
-                brand = words[words.index("de") + 2]  
-                model = words[words.index("de") + 3]
-                fuel = "benzine" if "benzine" in ai_response.lower() else \
-                       "diesel" if "diesel" in ai_response.lower() else \
-                       "hybride" if "hybride" in ai_response.lower() else \
-                       "elektrisch"
-
-                gaspedaal_url = generate_gaspedaal_link(brand, model, fuel)
-
-                ai_response += f"\n\n🚗 Bekijk deze auto op Gaspedaal.nl: [**Klik hier**]({gaspedaal_url}) 🚀"
-            except ValueError:
-                pass
 
         # ✅ Verbeterde chatweergave en verwijder ongewenste tekens
         formatted_response = ai_response.strip()\
