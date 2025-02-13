@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.INFO)
 # ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
-# ✅ Homepage route (Render zal deze pagina tonen bij bezoek aan de hoofd-URL)
 @app.route('/')
 def home():
     return "🚀 AI Autoverkoper API is live! Gebruik /chat om vragen te stellen."
@@ -28,38 +27,53 @@ def home():
 def chat():
     """
     Voert een doorlopend gesprek met de gebruiker via AI.
-    De AI is getraind als een ervaren autoverkoper.
+    Zodra er een concreet auto-advies wordt gegeven, genereert OpenAI automatisch een dynamische Gaspedaal.nl-link.
     """
     data = request.json
     user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
     user_message = data.get('message', '').strip()
 
-    # ✅ Log het ontvangen bericht
     logging.info(f"🚀 Ontvangen bericht van {user_id}: {user_message}")
 
-    # ✅ Controleer of het bericht leeg is
     if not user_message:
-        return jsonify("Bericht mag niet leeg zijn"), 400  # ✅ Stuur geldige JSON-response zonder extra keys
+        return jsonify("Bericht mag niet leeg zijn"), 400  
 
     # ✅ Gespreksgeschiedenis ophalen of aanmaken
     if user_id not in user_sessions:
         user_sessions[user_id] = [
-            {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring.
-            Je helpt klanten bij het vinden van hun ideale tweedehands auto door hen vragen te stellen over hun wensen en situatie.
-            Je introduceert jezelf vriendelijk en stelt enkele beginvragen zoals budget, type auto en gebruiksdoel.
-            Als klanten niet genoeg details geven, stel je vervolgvragen. Zodra er voldoende informatie is, adviseer je een specifieke auto
-            inclusief merk, model, type en een bouwjaar.
-            Je mag emoji's gebruiken om de chat menselijker te maken, maar houd het professioneel.
-            Je beantwoordt **alleen autogerelateerde vragen**. Als iemand iets anders vraagt, zeg je dat deze chat alleen bedoeld is voor autovragen."""}
+            {"role": "system", "content": """Je bent Jan Reus, een ervaren autoverkoper met 10 jaar ervaring. 
+            Je helpt klanten bij het vinden van hun ideale tweedehands auto door slimme vragen te stellen over hun wensen. 
+            
+            ✅ **Zodra er voldoende informatie is, adviseer je een specifieke auto** met:
+            - Merk en model
+            - Brandstoftype (benzine, diesel, hybride, elektrisch)
+            - Bouwjaar (schatting)
+            - Transmissie (automaat of handgeschakeld)
+            
+            ✅ **Je genereert automatisch een correcte, klikbare link naar Gaspedaal.nl.**  
+            Gebruik deze URL-structuur en vul deze dynamisch in:
+            
+            🚗 *Voorbeeld link:*
+            [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?srt=df-a)
+
+            **Regels voor de link:**  
+            - Merk en model moeten klein geschreven zijn, zonder spaties.  
+            - Brandstoftype moet correct worden verwerkt (benzine, diesel, hybride of elektrisch).  
+            - De link mag alleen worden gegenereerd als je zeker weet welk model het best bij de klant past.  
+            
+            🎯 **Voorbeelden van correcte links:**  
+            - Peugeot 2008, benzine → [Klik hier](https://www.gaspedaal.nl/peugeot/2008/benzine?srt=df-a)  
+            - Volkswagen Golf, diesel → [Klik hier](https://www.gaspedaal.nl/volkswagen/golf/diesel?srt=df-a)  
+            - Toyota Yaris, hybride → [Klik hier](https://www.gaspedaal.nl/toyota/yaris/hybride?srt=df-a)  
+
+            ✅ **Je gebruikt een vriendelijke en professionele toon en houdt je antwoorden kort.**  
+            ✅ **Je mag emoji's gebruiken om het gesprek menselijker te maken, maar houd het professioneel.**  
+            ✅ **Je beantwoordt alleen autogerelateerde vragen en verwijst gebruikers anders door.**  
+            """}
         ]
 
-    # ✅ Voeg de gebruikersvraag toe aan de gespreksgeschiedenis
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
-    # ✅ Log de volledige gespreksgeschiedenis voor debuggen
-    logging.info(f"📝 Huidige gespreksgeschiedenis voor {user_id}: {user_sessions[user_id]}")
-
-    # ✅ OpenAI API-aanroep met volledige gespreksgeschiedenis
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {OPENAI_API_KEY}"
@@ -67,7 +81,7 @@ def chat():
 
     payload = {
         "model": "gpt-4o-mini",
-        "messages": user_sessions[user_id],  # Stuur de volledige gespreksgeschiedenis mee
+        "messages": user_sessions[user_id],
         "temperature": 0.7
     }
 
@@ -75,8 +89,8 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
-        
-        # ✅ Log de AI-reactie
+
+        # ✅ Log AI-reactie voor controle
         logging.info(f"🛠️ AI-reactie voor {user_id}: {ai_response}")
 
         # ✅ Verbeterde opmaak zonder markdown en JSON-fouten
@@ -91,7 +105,7 @@ def chat():
         # ✅ Voeg AI-reactie toe aan de gespreksgeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        return jsonify(clean_response)  # ✅ Stuurt alleen de AI-reactie terug als JSON zonder extra keys
+        return jsonify(clean_response)  
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify("Er is een fout opgetreden bij de AI. Probeer het later opnieuw."), response.status_code
