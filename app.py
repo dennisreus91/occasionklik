@@ -63,7 +63,7 @@ def chat():
             - Volkswagen Golf, diesel, 2019, max 80.000 km, handgeschakeld →  
               [Klik hier](https://www.gaspedaal.nl/volkswagen/golf/diesel?bmin=2019&kmax=80000&trns=15&srt=df-a)  
 
-            ✅ **Houd de antwoorden professioneel en kort.**  
+            ✅ **Houd de antwoorden professioneel.**  
             ✅ **Je mag emoji's gebruiken voor een vriendelijke uitstraling, maar houd het zakelijk.**  
             ✅ **Je beantwoordt alleen autogerelateerde vragen.**  
             """}
@@ -77,7 +77,7 @@ def chat():
     }
 
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": user_sessions[user_id],
         "temperature": 0.7
     }
