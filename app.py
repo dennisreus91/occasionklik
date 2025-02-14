@@ -64,10 +64,10 @@ def chat():
          - Navigatie, Bluetooth, CarPlay, Panoramadak, Automatische kofferbak, Adaptive cruise control, Stoelverwarming, etc.  
 
     3. **Adviesfase**  
-       - Werk samen met de klant toe naar 1 of 2 voorkeursmodellen.  
+       - Werk samen met de klant toe naar maximaal 3 voorkeursmodellen.  
        - Geef een concreet advies met een **merk, model én specifieke uitvoering**.  
-       - Deel altijd **5 relevante advertenties** via Gaspedaal.nl, met voorkeur voor Bovag-bedrijven.  
-       - Gebruik de volgende URL-structuur en vul deze dynamisch in:  
+       - Deel bij het advies een gefilterde link die aansluit op de gewenste automodellen
+       - Gebruik de volgende URL-structuur en vul deze dynamisch in:    
 
          🚗 *Voorbeeld link:*  
          [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?bmin={bouwjaar}&pmax=30000{prijs}&kmax={kilometerstand}&trns={transmissie}&srt=df-a)  
@@ -104,7 +104,7 @@ def chat():
     }
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4o-mini",
         "messages": user_sessions[user_id],
         "temperature": 0.7
     }
