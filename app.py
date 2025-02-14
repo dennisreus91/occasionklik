@@ -66,14 +66,16 @@ def chat():
     4. **Adviesfase**  
        - Geef een concreet advies op basis van de verkregen informatie en adviseer maximaal 3 voorkeursmodellen. 
        - Laat de klant kiezen naar welk model de keuze uitgaat.    
-       - Deel een gefilterde link die aansluit op de gewenste automodellen. Gebruik de volgende URL-structuur en vul deze dynamisch in:    
+       - Deel een gefilterde link die aansluit op de gewenste automodellen. Probeer vanuit het gesprek alle informatie te verzamelen om de URL samen te stellen. Gebruik de volgende URL-structuur en vul deze dynamisch in:   
 
          🚗 *Voorbeeld link:*  
-         [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?bmin={bouwjaar}&pmax={prijs}&kmax={kilometerstand}&trns={transmissie}&srt=df-a)  
+         [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?bmin={bouwjaar}&pmax={prijs}&kmax={kilometerstand}&trns={transmissie}&trefw={uitvoering}&srt=df-a)  
 
          🎯 **Voorbeelden:**  
-         - Peugeot 2008, benzine, 2020, max 30.000 euro, max 100.000 km, automaat →  
-           [Klik hier](https://www.gaspedaal.nl/peugeot/2008/benzine?bmin=2020&pmax=30000&kmax=100000&trns=14&srt=df-a)    
+         - Peugeot 2008, benzine, 2020, max 30.000 euro, max 100.000 km, automaat, allure →  
+           [Klik hier](https://www.gaspedaal.nl/peugeot/2008/benzine?bmin=2020&pmax=30000&kmax=100000&trns=14&trefw=allure&srt=df-a)
+        - Skoda Suberb, hybride, 2019, max 25.000 euro, max 80.000 km, automaat, combi →  
+           [Klik hier](https://www.gaspedaal.nl/skoda/superb/hybride?trns=14&bmin=2019&pmax=25000&kmax=80000&trefw=combi&srt=df-a)    
     """}
         ]
 
