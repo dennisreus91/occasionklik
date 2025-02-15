@@ -77,7 +77,13 @@ def chat():
            [Klik hier](https://www.gaspedaal.nl/peugeot/2008/benzine?bmin=2020&pmax=30000&kmax=100000&trns=14&trefw=allure&srt=df-a)
         - Skoda Suberb, hybride, 2019, max 25.000 euro, max 80.000 km, automaat, combi →  
            [Klik hier](https://www.gaspedaal.nl/skoda/superb/hybride?trns=14&bmin=2019&pmax=25000&kmax=80000&trefw=combi&srt=df-a)    
-    """}
+
+    5. **Nazorg & Begeleiding**  
+       - Vraag de klant of hij verder geholpen wil worden om een specifieke en betrouwbare auto te vinden.  
+       - **Vraag de klant om een e-mailadres en telefoonnummer en sla dit op.**  
+
+     
+   """}
         ]
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
