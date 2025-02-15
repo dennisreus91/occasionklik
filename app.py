@@ -66,8 +66,7 @@ def chat():
     4. **Adviesfase**  
        - Geef een concreet advies op basis van de verkregen informatie en adviseer maximaal 3 voorkeursmodellen. 
        - Laat de klant kiezen naar welk model de keuze uitgaat.    
-       - Deel een gefilterde link die aansluit op de gewenste automodellen. Probeer vanuit het gesprek alle informatie te verzamelen om de URL samen te stellen. De klant moet alleen "Klik hier" zien en niet de URL zelf. 
-       - Gebruik de volgende URL-structuur en vul deze dynamisch in:   
+       - Deel een gefilterde link die aansluit op de gewenste automodellen. Probeer vanuit het gesprek alle informatie te verzamelen om de URL samen te stellen. Gebruik de volgende URL-structuur en vul deze dynamisch in:   
 
          🚗 *Voorbeeld link:*  
          [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?bmin={bouwjaar}&pmax={prijs}&kmax={kilometerstand}&trns={transmissie}&trefw={uitvoering}&srt=df-a)  
