@@ -78,7 +78,7 @@ def chat():
     }
 
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": user_sessions[user_id],
         "temperature": 0.6
     }
