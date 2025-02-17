@@ -56,16 +56,16 @@ def chat():
        - Laat de klant kiezen naar tussen de gedeelde modellen en vraag of de klant nog vragen heeft. Deel vervolgens een gefilterde link die aansluit op de gekozen modellen. Gebruik de volgende URL-structuur en vul deze dynamisch in:  
 
          *Voorbeeld link:*  
-         [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{brandstof}?bmin={bouwjaar}&pmax={prijs}&kmax={kilometerstand}&trns={transmissie}&trefw={uitvoering}&srt=df-a)   
+         [**Klik hier**](https://www.gaspedaal.nl/{merk}/{model}/{carrosserie}?brnst={brandstof}&bmin={bouwjaar}&pmax={prijs}&kmax={kilometerstand}&trns={transmissie}&trefw={uitvoering}&srt=df-a)   
 
          **Voorbeelden:**  
-         - Peugeot 2008 allura, benzine, 2020, max 30.000 euro, max 100.000 km, automaat →  
-           [Klik hier](https://www.gaspedaal.nl/peugeot/2008/benzine?bmin=2020&pmax=30000&kmax=100000&trns=14&trefw=allure&srt=df-a)
-        - Skoda Suberb combi, hybride, 2019, max 25.000 euro, max 80.000 km, automaat →  
-           [Klik hier](https://www.gaspedaal.nl/skoda/superb/hybride?trns=14&bmin=2019&pmax=25000&kmax=80000&trefw=combi&srt=df-a)    
+         - Peugeot 308 SW allure, benzine, 2018, max 25.000 euro, max 80.000 km, handgeschakeld →  
+           [Klik hier](https://www.gaspedaal.nl/peugeot/308/stationwagon?brnst=23&trns=15&bmin=2018&pmax=25000&kmax=80000&trefw=allure&srt=df-a)
+        - Skoda Suberb business edition, hybride, handgeschakeld, 2019, max 30.000 euro, max 100.000 km →  
+           [Klik hier](https://www.gaspedaal.nl/skoda/superb?brnst=25&trns=14&bmin=2019&pmax=30000&kmax=100000&trefw=business+edition&srt=df-a)    
 
 
-       - Vraag na het advies of de klant zijn contactgegevens wilt delen (e-mailadres en telefoonnnummer) om verder geholpen te worden door een autoverkoper bij het vinden en kopen van een betrouwbare tweedehands auto.  
+       - Vraag na het advies of de klant nog vragen heeft. Vraag vervolgens naar zijn contactgegevens (e-mailadres en telefoonnnummer) om verder geholpen te worden door een autoverkoper bij het vinden en kopen van een betrouwbare tweedehands auto.  
           
    """}
         ]
