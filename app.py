@@ -25,30 +25,35 @@ def home():
 def chat():
     data = request.json
     user_id = data.get('user_id', 'default')
-    vraag = data.get('vraag', '').strip()
-    url = data.get('url', '').strip()
+    user_message = data.get('vraag', '').strip()
 
-    if not vraag or not url:
-        return jsonify({"error": "Zowel vraag als URL zijn verplicht."}), 400
+    if not user_message:
+        return jsonify({"error": "Bericht mag niet leeg zijn."}), 400
 
-    logging.info(f"📩 Vraag ontvangen van {user_id}: {vraag} (URL: {url})")
+    logging.info(f"📩 Bericht ontvangen van {user_id}: {user_message}")
 
     if user_id not in user_sessions:
+        # Nieuwe sessie starten met aangepaste prompt
         user_sessions[user_id] = [
-            {"role": "system", "content": f"""
+            {"role": "system", "content": """
 Je bent een slimme AI-woningadviseur op Huislijn.nl.
-Je krijgt vragen over woningen die bezoekers bekijken.
-Gebruik de opgegeven URL om het adres van de woning af te leiden.
-Gebruik Search Preview om online relevante informatie over de woning, omgeving, reistijd, voorzieningen, hypotheken, verzekeringen of verduurzaming op te zoeken.
+Je helpt bezoekers om vragen te beantwoorden over specifieke woningen.
 
-📌 Alleen woninggerelateerde vragen mogen beantwoord worden.
-⛔️ Vragen over niet-woninggerelateerde onderwerpen (zoals auto's of persoonlijke zaken) mag je niet beantwoorden.
-Als iets niet woninggerelateerd is, geef dan vriendelijk aan dat je alleen vragen over de woning kunt beantwoorden.
+📌 Als de gebruiker nog geen URL heeft gedeeld van een woningpagina op Huislijn.nl:
+- Vraag dan eerst vriendelijk om de link naar de woningpagina.
+
+📌 Zodra de gebruiker een woning-URL heeft gedeeld:
+- Gebruik de URL om het adres van de woning af te leiden.
+- Gebruik Search Preview om online relevante informatie op te zoeken over de woning, omgeving, voorzieningen, reistijd, verduurzaming, hypotheken en verzekeringen.
+
+⛔️ Je mag alleen woninggerelateerde vragen beantwoorden.
+⛔️ Beantwoord geen vragen over niet-woninggerelateerde onderwerpen zoals auto's, fietsen, elektronica of persoonlijke zaken.
+
+Geef altijd duidelijke, feitelijke en vriendelijke antwoorden.
 """}
         ]
 
-    # ✅ Bouw gebruikersinvoer als promptregel
-    user_sessions[user_id].append({"role": "user", "content": f"Vraag: {vraag}\nWoningpagina: {url}"})
+    user_sessions[user_id].append({"role": "user", "content": user_message})
 
     headers = {
         "Content-Type": "application/json",
