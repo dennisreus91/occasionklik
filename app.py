@@ -25,7 +25,7 @@ def home():
 def chat():
     data = request.json
     user_id = data.get('user_id', 'default')
-    user_message = data.get('vraag', '').strip()
+    user_message = data.get('message', '').strip()
 
     if not user_message:
         return jsonify({"error": "Bericht mag niet leeg zijn."}), 400
