@@ -23,36 +23,42 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    """
+    Voert een doorlopend gesprek met de gebruiker via AI
+    met focus op woninggerelateerde vragen.
+    """
     data = request.json
-    user_id = data.get('user_id', 'default')
+    user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
     user_message = data.get('message', '').strip()
 
+    logging.info(f"📩 Ontvangen bericht van {user_id}: {user_message}")
+
     if not user_message:
-        return jsonify({"error": "Bericht mag niet leeg zijn."}), 400
+        return jsonify("Bericht mag niet leeg zijn."), 400
 
-    logging.info(f"📩 Bericht ontvangen van {user_id}: {user_message}")
-
+    # ✅ Start nieuwe sessie indien nodig
     if user_id not in user_sessions:
-        # Nieuwe sessie starten met aangepaste prompt
         user_sessions[user_id] = [
             {"role": "system", "content": """
 Je bent een slimme AI-woningadviseur op Huislijn.nl.
-Je helpt bezoekers om vragen te beantwoorden over specifieke woningen.
+Je helpt bezoekers bij het vinden van informatie en advies over specifieke woningen.
 
-📌 Als de gebruiker nog geen URL heeft gedeeld van een woningpagina op Huislijn.nl:
-- Vraag dan eerst vriendelijk om de link naar de woningpagina.
+📌 Vraag eerst waar de bezoeker behoefte aan heeft.
+📌 Als de bezoeker informatie of advies wil over een specifieke woning:
+    - Vraag om de URL van de woningpagina op Huislijn.nl (als die nog niet bekend is).
 
-📌 Zodra de gebruiker een woning-URL heeft gedeeld:
-- Gebruik de URL om het adres van de woning af te leiden.
-- Gebruik Search Preview om online relevante informatie op te zoeken over de woning, omgeving, voorzieningen, reistijd, verduurzaming, hypotheken en verzekeringen.
+📌 Zodra een woning-URL is gedeeld:
+    - Gebruik deze om online informatie op te halen over de woning, buurt, voorzieningen, verduurzaming, hypotheken of verzekeringen via web search.
+    - Houd rekening met de gedeelde woning voor verdere vragen.
 
-⛔️ Je mag alleen woninggerelateerde vragen beantwoorden.
-⛔️ Beantwoord geen vragen over niet-woninggerelateerde onderwerpen zoals auto's, fietsen, elektronica of persoonlijke zaken.
+⛔️ Beantwoord alleen woninggerelateerde vragen.
+⛔️ Geef vriendelijk aan als een vraag niet over woningen gaat.
 
-Geef altijd duidelijke, feitelijke en vriendelijke antwoorden.
+Wees altijd vriendelijk, behulpzaam en duidelijk.
 """}
         ]
 
+    # ✅ Voeg nieuwe gebruikersinvoer toe
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
     headers = {
@@ -60,6 +66,7 @@ Geef altijd duidelijke, feitelijke en vriendelijke antwoorden.
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
+    # ✅ Bouw de payload correct voor gpt-4o-search-preview
     payload = {
         "model": "gpt-4o-search-preview",
         "messages": user_sessions[user_id],
@@ -80,10 +87,12 @@ Geef altijd duidelijke, feitelijke en vriendelijke antwoorden.
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
+
+        # ✅ Stuur antwoord terug naar de gebruiker
         return jsonify({"antwoord": ai_response.strip()})
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
-        return jsonify({"error": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), 500
+        return jsonify({"error": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
