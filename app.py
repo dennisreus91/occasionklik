@@ -34,7 +34,7 @@ def chat():
     logging.info(f"📩 Ontvangen bericht van {user_id}: {user_message}")
 
     if not user_message:
-        return jsonify("Bericht mag niet leeg zijn."), 400
+        return jsonify({"error": "Bericht mag niet leeg zijn."}), 400
 
     # ✅ Start nieuwe sessie indien nodig
     if user_id not in user_sessions:
@@ -66,11 +66,10 @@ Wees altijd vriendelijk, behulpzaam en duidelijk.
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
-    # ✅ Bouw de payload correct voor gpt-4o-search-preview
+    # ✅ Bouw de correcte payload (zonder temperature)
     payload = {
         "model": "gpt-4o-search-preview",
         "messages": user_sessions[user_id],
-        "temperature": 0.5,
         "web_search_options": {
             "user_location": {
                 "type": "approximate",
@@ -82,6 +81,7 @@ Wees altijd vriendelijk, behulpzaam en duidelijk.
         }
     }
 
+    # ✅ Verstuur naar OpenAI
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
     if response.status_code == 200:
