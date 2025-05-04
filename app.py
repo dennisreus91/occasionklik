@@ -41,20 +41,28 @@ def chat():
         user_sessions[user_id] = [
             {"role": "system", "content": """
 Je bent een slimme AI-woningadviseur op Huislijn.nl.
-Je helpt bezoekers bij het vinden van informatie en advies over specifieke woningen.
 
-📌 Vraag eerst waar de bezoeker behoefte aan heeft.
-📌 Als de bezoeker informatie of advies wil over een specifieke woning:
-    - Vraag om de URL van de woningpagina op Huislijn.nl (als die nog niet bekend is).
+Werkwijze:
+- Vraag eerst waar de bezoeker behoefte aan heeft.
+- Als de bezoeker informatie of advies wil over een specifieke woning:
+    - Vraag zowel om de URL van de woningpagina op Huislijn.nl
+    - En vraag welke specifieke vragen of welk type advies de bezoeker over deze woning wil.
+- Gebruik pas daarna de URL (en de vragen) om gericht antwoord te geven.
 
-📌 Zodra een woning-URL is gedeeld:
-    - Gebruik deze om online informatie op te halen over de woning, buurt, voorzieningen, verduurzaming, hypotheken of verzekeringen via web search.
-    - Houd rekening met de gedeelde woning voor verdere vragen.
+Belangrijk:
+- Gebruik Search Preview om online informatie op te halen over de woning, buurt, voorzieningen, verduurzaming, hypotheken of verzekeringen.
+- Beantwoord alleen woninggerelateerde vragen.
+- Geef vriendelijk aan als vragen niet woninggerelateerd zijn.
+- Beantwoord kort, bondig, fetelijk en specifiek de gestelde vraag.
+- Je mag waar relevant gebruik maken van kleine symbolen en emoji's (zoals ✅, 📍, 🔑) om antwoorden visueel aantrekkelijker te maken.
+- Blijf professioneel en duidelijk. Gebruik symbolen spaarzaam en passend bij het antwoord.
 
-⛔️ Beantwoord alleen woninggerelateerde vragen.
-⛔️ Geef vriendelijk aan als een vraag niet over woningen gaat.
+Regels voor je antwoord:
+- Voeg geen externe links toe zoals Google Maps-links.
+- Herhaal het adres van de woning niet expliciet in het antwoord.
+- Richt je direct op het beantwoorden van de vraag.
 
-Wees altijd vriendelijk, behulpzaam en duidelijk.
+Wees vriendelijk, behulpzaam en duidelijk.
 """}
         ]
 
@@ -66,7 +74,7 @@ Wees altijd vriendelijk, behulpzaam en duidelijk.
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
-    # ✅ Bouw de correcte payload (zonder temperature)
+    # ✅ Bouw de correcte payload
     payload = {
         "model": "gpt-4o-search-preview",
         "messages": user_sessions[user_id],
@@ -81,15 +89,26 @@ Wees altijd vriendelijk, behulpzaam en duidelijk.
         }
     }
 
+    # ✅ Debugging: toon de payload die naar OpenAI wordt gestuurd
+    logging.debug(f"➡️ Payload naar OpenAI: {payload}")
+
     # ✅ Verstuur naar OpenAI
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
     if response.status_code == 200:
-        ai_response = response.json()["choices"][0]["message"]["content"]
+        raw_response = response.json()["choices"][0]["message"]["content"]
+
+        # ✅ Opschonen: verwijder headings en lege regels
+        lines = raw_response.splitlines()
+        cleaned_lines = [line for line in lines if not (line.startswith("#") or line.strip() == "")]
+        ai_response = " ".join(cleaned_lines).strip()
+
+        # ✅ Extra cleaning: verwijder technische tekens maar behoud gewone symbolen
+        ai_response = ai_response.replace("\n", " ").replace("\\n", " ").replace("\\", "").replace("  ", " ").strip()
+
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
 
-        # ✅ Stuur antwoord terug naar de gebruiker
-        return jsonify({"antwoord": ai_response.strip()})
+        return jsonify({"antwoord": ai_response})
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), response.status_code
