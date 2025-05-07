@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 import logging
-import markdown  # ✅ Toegevoegd voor automatische Markdown naar HTML conversie
+import markdown  # ✅ Voor automatische Markdown naar HTML conversie
 
 # ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
@@ -29,7 +29,7 @@ def chat():
     met focus op woninggerelateerde vragen.
     """
     data = request.json
-    user_id = data.get('user_id', 'default')  # Uniek ID per gebruiker (afkomstig uit Landbot)
+    user_id = data.get('user_id', 'default')
     user_message = data.get('message', '').strip()
 
     logging.info(f"📩 Ontvangen bericht van {user_id}: {user_message}")
@@ -75,7 +75,7 @@ Wees vriendelijk, behulpzaam en duidelijk.
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
-    # ✅ Bouw de correcte payload
+    # ✅ Bouw de payload voor OpenAI
     payload = {
         "model": "gpt-4o-search-preview",
         "messages": user_sessions[user_id],
@@ -90,7 +90,6 @@ Wees vriendelijk, behulpzaam en duidelijk.
         }
     }
 
-    # ✅ Debugging: toon de payload die naar OpenAI wordt gestuurd
     logging.debug(f"➡️ Payload naar OpenAI: {payload}")
 
     # ✅ Verstuur naar OpenAI
@@ -99,22 +98,22 @@ Wees vriendelijk, behulpzaam en duidelijk.
     if response.status_code == 200:
         raw_response = response.json()["choices"][0]["message"]["content"]
 
-        # ✅ Stap 1: opschonen van onnodige headings en lege regels
+        # ✅ Stap 1: schoonmaken van regels
         lines = raw_response.splitlines()
         cleaned_lines = [line for line in lines if not (line.startswith("#") or line.strip() == "")]
         markdown_text = " ".join(cleaned_lines).strip()
 
-        # ✅ Stap 2: Markdown naar nette HTML omzetten
+        # ✅ Stap 2: Markdown converteren naar nette HTML
         html_text = markdown.markdown(markdown_text)
 
-        # ✅ Stap 3: Extra lichte cleaning voor losse escapes en spaties
+        # ✅ Stap 3: Extra lichte schoonmaak
         html_text = html_text.replace("\\n", " ").replace("\\", "").replace("  ", " ").strip()
 
         # ✅ Update sessiegeschiedenis
         user_sessions[user_id].append({"role": "assistant", "content": html_text})
 
-        # ✅ Retourneer direct de nette HTML output
-        return html_text
+        # ✅ Altijd JSON response sturen naar Landbot
+        return jsonify({"antwoord": html_text})
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), response.status_code
