@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 import logging
+import markdown  # ✅ Toegevoegd voor automatische Markdown naar HTML conversie
 
 # ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
@@ -53,7 +54,7 @@ Belangrijk:
 - Gebruik Search Preview om online informatie op te halen over de woning, buurt, voorzieningen, verduurzaming, hypotheken of verzekeringen.
 - Beantwoord alleen woninggerelateerde vragen.
 - Geef vriendelijk aan als vragen niet woninggerelateerd zijn.
-- Beantwoord kort, bondig, fetelijk en specifiek de gestelde vraag.
+- Beantwoord kort, bondig, feitelijk en specifiek de gestelde vraag.
 - Je mag waar relevant gebruik maken van kleine symbolen en emoji's (zoals ✅, 📍, 🔑) om antwoorden visueel aantrekkelijker te maken.
 - Blijf professioneel en duidelijk. Gebruik symbolen spaarzaam en passend bij het antwoord.
 
@@ -98,17 +99,22 @@ Wees vriendelijk, behulpzaam en duidelijk.
     if response.status_code == 200:
         raw_response = response.json()["choices"][0]["message"]["content"]
 
-        # ✅ Opschonen: verwijder headings en lege regels
+        # ✅ Stap 1: opschonen van onnodige headings en lege regels
         lines = raw_response.splitlines()
         cleaned_lines = [line for line in lines if not (line.startswith("#") or line.strip() == "")]
-        ai_response = " ".join(cleaned_lines).strip()
+        markdown_text = " ".join(cleaned_lines).strip()
 
-        # ✅ Extra cleaning: verwijder technische tekens maar behoud gewone symbolen
-        ai_response = ai_response.replace("\n", " ").replace("\\n", " ").replace("\\", "").replace("  ", " ").strip()
+        # ✅ Stap 2: Markdown naar nette HTML omzetten
+        html_text = markdown.markdown(markdown_text)
 
-        user_sessions[user_id].append({"role": "assistant", "content": ai_response})
+        # ✅ Stap 3: Extra lichte cleaning voor losse escapes en spaties
+        html_text = html_text.replace("\\n", " ").replace("\\", "").replace("  ", " ").strip()
 
-        return jsonify({"antwoord": ai_response})
+        # ✅ Update sessiegeschiedenis
+        user_sessions[user_id].append({"role": "assistant", "content": html_text})
+
+        # ✅ Retourneer direct de nette HTML output
+        return html_text
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify({"error": "Er is een fout opgetreden bij de AI. Probeer het later opnieuw."}), response.status_code
