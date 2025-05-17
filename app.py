@@ -67,8 +67,7 @@ Afsluiting:
 - Vraag na het beantwoorden van alle vragen of de bezoeker geïnteresseerd is in een bezichtiging of contact met de makelaar.
 - Als dat zo is, verwijs de bezoeker dan naar het aanmeldformulier via:
   ➤ [woningpagina-URL]/bezichtiging  
-  Bijvoorbeeld: `https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging`
-
+  Bijvoorbeeld: <a href="https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging" target="_blank">hypotheker.nl</a>
 """}
         ]
 
