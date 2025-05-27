@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+=from flask import Flask, request, jsonify
 import requests
 from dotenv import load_dotenv
 import os
@@ -58,27 +58,50 @@ Antwoordregels:
 - Gebruik emoji’s waar passend (zoals ✅ 📍 🔑).
 - Geef altijd zelf advies en vul dat aan met een externe link als extra hulp.
 - Als je de vraag niet concreet kunt beantwoorden, verwijs dan vriendelijk naar een relevante externe website waar deze info mogelijk wel te vinden is.
-- Gebruik bij externe links altijd HTML-opmaak (zoals <a href="...">Hypotheker.nl</a>) en toon geen volledige URL. Gebruik dus géén Markdown zoals [tekst](link).
+- Gebruik bij externe links altijd HTML-opmaak (zoals <a href=\"...\">Hypotheker.nl</a>) en toon geen volledige URL. Gebruik dus géén Markdown zoals [tekst](link).
 
 Externe links (indien relevant, na antwoord):
-- Verduurzaming ➝ <a href="https://www.woonwijzerwinkel.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">WoonWijzerWinkel.nl</a>  
-- Financiering ➝ <a href="https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">Hypotheker.nl</a>
-- Hypotheekadvies ➝ <a href="https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">Hypotheker.nl</a>
-- Berekenen maximale hypotheek of budget ➝ <a href="https://www.hypotheker.nl/zelf-berekenen/kan-ik-dit-huis-betalen/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">Bereken nu</a>
-- Aankoopmakelaar ➝ <a href="https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">Makelaarsland.nl</a>
-- Waardebepaling woning ➝ <a href="https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">Makelaarsland.nl</a>
-- Verhuizingen ➝ <a href="https://mmverhuizingen.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies" target="_blank" rel="noopener noreferrer">M&MVerhuizingen.nl</a>    
-             
+- Verduurzaming ➝ <a href=\"https://www.woonwijzerwinkel.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">WoonWijzerWinkel.nl</a>  
+- Financiering ➝ <a href=\"https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">Hypotheker.nl</a>
+- Hypotheekadvies ➝ <a href=\"https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">Hypotheker.nl</a>
+- Berekenen maximale hypotheek of budget ➝ <a href=\"https://www.hypotheker.nl/zelf-berekenen/kan-ik-dit-huis-betalen/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">Bereken nu</a>
+- Aankoopmakelaar ➝ <a href=\"https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">Makelaarsland.nl</a>
+- Waardebepaling woning ➝ <a href=\"https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">Makelaarsland.nl</a>
+- Verhuizingen ➝ <a href=\"https://mmverhuizingen.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies\" target=\"_blank\" rel=\"noopener noreferrer\">M&MVerhuizingen.nl</a>    
+         
 Afsluiting:
 - Vraag na het beantwoorden van de woningvragen of de bezoeker ook hulp kan gebruiken bij andere woononderwerpen, zoals verduurzaming, verbouwen, vergelijken, of financiering.
 - Vraag daarna of de bezoeker interesse heeft in een bezichtiging, contact met de makelaar of vrijblijvend hypotheekadvies.
 - Als dat zo is, verwijs de bezoeker dan naar het aanmeldformulier via:
   ➤ [woningpagina-URL]/bezichtiging  
-  Bijvoorbeeld: <a href="https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging" target="_blank" rel="noopener noreferrer">Contact met deze makelaar</a>
+  Bijvoorbeeld: <a href=\"https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging\" target=\"_blank\" rel=\"noopener noreferrer\">Contact met deze makelaar</a>
 """}
         ]
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
+
+    # ✅ Samenvatting na elke 10 gebruikersberichten (excl. system prompt)
+    if (len(user_sessions[user_id]) - 1) % 10 == 0 and len(user_sessions[user_id]) > 11:
+        summary_prompt = [
+            {"role": "system", "content": "Vat dit gesprek samen in maximaal 5 puntsgewijze inzichten, gericht op woning en interesses van de bezoeker."},
+            *user_sessions[user_id][1:]  # sla system prompt over
+        ]
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OPENAI_API_KEY}"
+        }
+        summary_payload = {
+            "model": "gpt-4o",
+            "messages": summary_prompt,
+            "temperature": 0.3,
+            "max_tokens": 300
+        }
+        summary_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=summary_payload)
+        if summary_response.status_code == 200:
+            summary_text = summary_response.json()["choices"][0]["message"]["content"]
+            user_sessions[user_id] = [
+                {"role": "system", "content": f"Je bent Ronald, woningadviseur bij Huislijn.nl. Dit is de samenvatting van het voorgaande gesprek:\n\n{summary_text}\n\nBeantwoord vervolgvragen kort, duidelijk en woninggericht. Gebruik emoji’s waar passend (zoals ✅ 📍 🔑)."}
+            ]
 
     headers = {
         "Content-Type": "application/json",
@@ -96,10 +119,8 @@ Afsluiting:
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
         clean_response = ai_response.strip().replace("\n\n", "<br><br>").replace("\n", " ")
-
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
         return jsonify(clean_response)
-
     else:
         logging.error(f"❌ OpenAI API-fout: {response.text}")
         return jsonify("Er is een fout opgetreden bij de AI. Probeer het later opnieuw."), response.status_code
