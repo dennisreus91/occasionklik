@@ -5,18 +5,13 @@ import os
 from flask_cors import CORS
 import logging
 
-# ✅ Laad de OpenAI API Key vanuit .env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Flask-app instellen
 app = Flask(__name__)
-CORS(app)  # Sta API-aanvragen toe vanaf andere domeinen
-
-# ✅ Logging instellen voor debug-informatie
+CORS(app)
 logging.basicConfig(level=logging.INFO)
 
-# ✅ Opslag voor gespreksgeschiedenis per gebruiker (tijdelijk geheugen)
 user_sessions = {}
 
 @app.route('/')
@@ -56,30 +51,25 @@ Antwoordregels:
 - Stel actief gerichte vragen als iemand om advies vraagt, zodat je voldoende input hebt om gepersonaliseerd te adviseren.
 - Geef korte, duidelijke antwoorden. Vermijd overbodige uitleg om tokens te besparen.
 - Gebruik emoji’s waar passend (zoals ✅ 📍 🔑).
-- Gebruik altijd Markdown-opmaak voor links, bijvoorbeeld: `[Hypotheker.nl](https://www.hypotheker.nl)`
-- Toon geen volledige URL’s. Gebruik geen HTML zoals `<a href="...">`.
+- Gebruik altijd Markdown-opmaak voor links, bijvoorbeeld: [Hypotheker.nl](https://www.hypotheker.nl)
+- Gebruik geen HTML-links. Toon geen volledige URL’s.
 
-Externe links (indien relevant, na antwoord):
+Externe links:
 - Verduurzaming ➝ [WoonWijzerWinkel.nl](https://www.woonwijzerwinkel.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
 - Financiering ➝ [Hypotheker.nl](https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Hypotheekadvies ➝ [Hypotheker.nl](https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Berekenen maximale hypotheek of budget ➝ [Bereken nu](https://www.hypotheker.nl/zelf-berekenen/kan-ik-dit-huis-betalen/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
 - Aankoopmakelaar ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Waardebepaling woning ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
 - Verhuizingen ➝ [M&MVerhuizingen.nl](https://mmverhuizingen.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)
 
 Afsluiting:
-- Vraag na het beantwoorden van de woningvragen of de bezoeker ook hulp kan gebruiken bij andere woononderwerpen, zoals verduurzaming, verbouwen, vergelijken, of financiering.
+- Vraag na het beantwoorden van de woningvragen of de bezoeker ook hulp kan gebruiken bij andere woononderwerpen.
 - Vraag daarna of de bezoeker interesse heeft in een bezichtiging, contact met de makelaar of vrijblijvend hypotheekadvies.
-- Als dat zo is, verwijs de bezoeker dan naar het aanmeldformulier via:
-  ➤ `[woningpagina-URL]/bezichtiging`  
-  Bijvoorbeeld: [Contact met deze makelaar](https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging)
+- Als dat zo is, verwijs de bezoeker naar [woningpagina-URL]/bezichtiging
 """}
         ]
 
     user_sessions[user_id].append({"role": "user", "content": user_message})
 
-    # ✅ Samenvatting na elke 10 gebruikersberichten (excl. system prompt)
+    # ✅ Samenvatting na elke 10 gebruikersberichten
     if (len(user_sessions[user_id]) - 1) % 10 == 0 and len(user_sessions[user_id]) > 11:
         summary_prompt = [
             {"role": "system", "content": "Vat dit gesprek samen in maximaal 5 puntsgewijze inzichten, gericht op woning en interesses van de bezoeker."},
@@ -117,7 +107,8 @@ Afsluiting:
 
     if response.status_code == 200:
         ai_response = response.json()["choices"][0]["message"]["content"]
-        clean_response = ai_response.strip().replace("\n\n", "<br><br>").replace("\n", " ")
+        # ✅ Geen formatting aanpassen: Markdown behouden
+        clean_response = ai_response.strip()
         user_sessions[user_id].append({"role": "assistant", "content": ai_response})
         return jsonify(clean_response)
     else:
