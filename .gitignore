@@ -1,7 +1,30 @@
-# Python bestanden die niet naar GitHub moeten
+# Byte-compiled / cache-bestanden
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+
+# Virtual environment
 venv/
 .env
+
+# VS Code config
+.vscode/
+
+# OS-bestanden
+.DS_Store
+Thumbs.db
+
+# Logbestanden
+*.log
+
+# Jupyter notebooks checkpoints (indien van toepassing)
+.ipynb_checkpoints/
+
+# macOS specifieke metadata (veilig voor bredere samenwerking)
+*.swp
+*.swo
+
+# Python wheel build
+*.egg-info/
+dist/
+build/
