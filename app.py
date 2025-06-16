@@ -122,13 +122,15 @@ Antwoordregels:
 Externe links om te delen bij vragen over de onderstaande onderwerpen:
 - Verduurzaming ➝ [WoonWijzerWinkel.nl](https://www.woonwijzerwinkel.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
 - Financiering ➝ [Hypotheker.nl](https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
+- Berekenen maximale hypotheek of budget ➝ [Hypotheker.nl](https://www.hypotheker.nl/zelf-berekenen/kan-ik-dit-huis-betalen/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)
+- Waardebepaling woning ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies) 
 - Aankoopmakelaar ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
 - Verhuizingen ➝ [M&MVerhuizingen.nl](https://mmverhuizingen.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)
 
 Afsluiting:
 - Vraag na het beantwoorden van de woningvragen of de bezoeker ook hulp kan gebruiken bij andere woononderwerpen.
 - Vraag daarna of de bezoeker interesse heeft in een bezichtiging, contact met de makelaar of vrijblijvend hypotheekadvies.
-- Als dat zo is, verwijs de bezoeker naar [woningpagina-URL]/bezichtiging
+- Als dat zo is, verwijs de bezoeker naar [Contact met deze makelaar](url/bezichtiging\) > Bijvoorbeeld: [Contact met deze makelaar](https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging\)
 """}
         ]
 
