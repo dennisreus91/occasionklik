@@ -5,7 +5,6 @@ import os
 from flask_cors import CORS
 import logging
 import json, re
-from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
 load_dotenv()
@@ -74,35 +73,9 @@ def scrape_listing_data(url: str, timeout: int = 6):
             }
     except:
         pass
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(user_agent=HEADERS["User-Agent"], locale="nl-NL")
-        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        page = context.new_page()
-        try:
-            page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
-            html = page.content()
-            json_text = page.evaluate("""() => {
-                const el = document.querySelector('script[type="application/ld+json"]');
-                return el ? el.innerText : null;
-            }""")
-            jsonld = json.loads(json_text) if json_text else None
-            extra = extract_extra_fields(html)
-            if jsonld:
-                return {
-                    "type_woning": jsonld.get("@type"),
-                    "url": jsonld.get("url"),
-                    "straatadres": jsonld.get("address", {}).get("streetAddress"),
-                    "plaats": jsonld.get("address", {}).get("addressLocality"),
-                    "regio": jsonld.get("address", {}).get("addressRegion"),
-                    "prijs": jsonld.get("offers", {}).get("price"),
-                    "omschrijving_jsonld": jsonld.get("description"),
-                    **extra
-                }
-        except:
-            return None
-        finally:
-            browser.close()
+
+    # Playwright fallback gedeactiveerd voor testdoeleinden
+    return None
 
 @app.route('/')
 def home():
