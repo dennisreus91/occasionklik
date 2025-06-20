@@ -5,6 +5,7 @@ import os
 from flask_cors import CORS
 import logging
 import json, re
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
 load_dotenv()
@@ -73,9 +74,35 @@ def scrape_listing_data(url: str, timeout: int = 6):
             }
     except:
         pass
-
-    # Playwright fallback gedeactiveerd voor testdoeleinden
-    return None
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(user_agent=HEADERS["User-Agent"], locale="nl-NL")
+        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        page = context.new_page()
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+            html = page.content()
+            json_text = page.evaluate("""() => {
+                const el = document.querySelector('script[type="application/ld+json"]');
+                return el ? el.innerText : null;
+            }""")
+            jsonld = json.loads(json_text) if json_text else None
+            extra = extract_extra_fields(html)
+            if jsonld:
+                return {
+                    "type_woning": jsonld.get("@type"),
+                    "url": jsonld.get("url"),
+                    "straatadres": jsonld.get("address", {}).get("streetAddress"),
+                    "plaats": jsonld.get("address", {}).get("addressLocality"),
+                    "regio": jsonld.get("address", {}).get("addressRegion"),
+                    "prijs": jsonld.get("offers", {}).get("price"),
+                    "omschrijving_jsonld": jsonld.get("description"),
+                    **extra
+                }
+        except:
+            return None
+        finally:
+            browser.close()
 
 @app.route('/')
 def home():
@@ -95,38 +122,7 @@ def chat():
         user_sessions[user_id] = [
             {"role": "system", "content": """
 Je bent Ronald, woningadviseur bij Huislijn.nl. Je helpt bezoekers via deze chat met alle woninggerelateerde vragen.
-
-Geef alleen antwoord op gestelde vragen — deel dus geen proactieve informatie over de woning zonder dat erom gevraagd is. 
-
-Start:
-- Stel jezelf kort voor als Ronald van Huislijn.nl.
-- Vertel waarmee je kunt helpen, zoals:
-  ➤ het beantwoorden van vragen over een specifieke woning  
-  ➤ hulp bij verduurzaming, verbouwing, financiering, verzekering, woningpotentie en ligging  
-  ➤ ondersteuning bij het vergelijken van woningen
-
-Antwoordregels:
-- Geef altijd een concreet antwoord op de vraag. Richt je daarbij zo veel mogelijk op de specifieke woning (bijv. noem concrete voorzieningen of scholen).
-- Gebruik de gedeelde woninginformatie en vul je antwoorden aan met je eigen algemene kennis over woningen, wijken, verduurzaming, ligging, voorzieningen, hypotheken, verbouwing en woningpotentie.
-- Stel actief gerichte vragen als iemand om advies vraagt, zodat je voldoende input hebt om gepersonaliseerd te adviseren.
-- Geef korte, duidelijke antwoorden. Vermijd overbodige uitleg om tokens te besparen.
-- Gebruik emoji’s waar passend (zoals ✅ 📍 🔑).
-- Gebruik altijd Markdown-opmaak voor links, bijvoorbeeld: [Hypotheker.nl](https://www.hypotheker.nl)
-- Gebruik geen HTML-links. Toon geen volledige URL’s.
-- Deze vraag is gesteld op basis van de volgende pagina: {url}. Negeer deze info als het niet relevant is voor het beantwoorden van de vraag.
-
-Externe links om te delen bij vragen over de onderstaande onderwerpen:
-- Verduurzaming ➝ [WoonWijzerWinkel.nl](https://www.woonwijzerwinkel.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Financiering ➝ [Hypotheker.nl](https://www.hypotheker.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Berekenen maximale hypotheek of budget ➝ [Hypotheker.nl](https://www.hypotheker.nl/zelf-berekenen/kan-ik-dit-huis-betalen/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)
-- Waardebepaling woning ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies) 
-- Aankoopmakelaar ➝ [Makelaarsland.nl](https://www.makelaarsland.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)  
-- Verhuizingen ➝ [M&MVerhuizingen.nl](https://mmverhuizingen.nl/?utm_source=huislijn&utm_medium=chat&utm_campaign=advies)
-
-Afsluiting:
-- Vraag na het beantwoorden van de woningvragen of de bezoeker ook hulp kan gebruiken bij andere woononderwerpen.
-- Vraag daarna of de bezoeker interesse heeft in een bezichtiging, contact met de makelaar of vrijblijvend hypotheekadvies.
-- Als dat zo is, verwijs de bezoeker naar [Contact met deze makelaar](url/bezichtiging\) > Bijvoorbeeld: [Contact met deze makelaar](https://www.huislijn.nl/koopwoning/nederland/utrecht/4182711/iepstraat-3-utrecht/bezichtiging\)
+... (volledige systeem prompt)
 """}
         ]
         user_scraped_urls[user_id] = set()
