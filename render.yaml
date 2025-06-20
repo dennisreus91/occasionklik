@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ai-woningadviseur
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app"
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # zorg dat dit via Render Dashboard wordt ingevuld
