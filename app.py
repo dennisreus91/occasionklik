@@ -114,6 +114,7 @@ def chat():
     user_id = data.get('user_id', 'default')
     user_message = data.get('message', '').strip()
     woning_url = data.get('woning_url', '').strip()
+    logging.info(f"📩 Ontvangen bericht - user_id: {user_id}, message: {user_message}, woning_url: {woning_url}")
 
     if not user_message:
         return jsonify("Bericht mag niet leeg zijn"), 400
