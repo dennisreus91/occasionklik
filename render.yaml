@@ -4,9 +4,19 @@ services:
     env: python
     region: frankfurt
     plan: free
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn app:app"
+
+    # ⬇️  Build: dependencies + Playwright (zonder browsers)
+    buildCommand: |
+      pip install -r requirements.txt
+      # eventueel extra stappen, maar géén playwright install hier nodig
+
+    # ⬇️  Start: installeert headless-Chromium én start Gunicorn
+    startCommand: |
+      bash -c "playwright install chromium --with-deps && gunicorn app:app"
+
+    pythonVersion: "3.11"        # ondersteunde versie voor Playwright
     autoDeploy: true
+
     envVars:
       - key: OPENAI_API_KEY
-        sync: false  # zorg dat dit via Render Dashboard wordt ingevuld
+        sync: false              # sleutel zet je in Render-dashboard
