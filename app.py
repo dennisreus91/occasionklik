@@ -115,6 +115,11 @@ def chat():
     user_message = data.get('message', '').strip()
     woning_url = data.get('woning_url', '').strip()
 
+    # ✅ Voeg hier logging toe om inputgegevens te controleren
+    logging.info(f"👤 user_id: {user_id}")
+    logging.info(f"💬 message: {user_message}")
+    logging.info(f"🔗 woning_url: {woning_url}")
+
     if not user_message:
         return jsonify("Bericht mag niet leeg zijn"), 400
 
@@ -164,6 +169,9 @@ Afsluiting:
         if scraped:
             woning_info = f"\nWoninginformatie: {json.dumps(scraped, ensure_ascii=False)}"
             user_scraped_urls[user_id].add(woning_url)
+            
+            # 👇 Log de gescrapete data
+            logging.info(f"🏠 Gescrapete woningdata voor {woning_url}:\n{json.dumps(scraped, indent=2, ensure_ascii=False)}")
 
     prompt_content = f"Vraag: {user_message}\nURL: {woning_url}{woning_info}"
     user_sessions[user_id].append({"role": "user", "content": prompt_content})
