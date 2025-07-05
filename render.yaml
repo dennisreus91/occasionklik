@@ -5,13 +5,12 @@ services:
     region: frankfurt
     plan: free
 
-    pythonVersion: "3.11"        # ⇦ dwing Python 3.11 af
+    pythonVersion: "3.11"
 
-    # 📦 Build: alleen Python-packages installeren
     buildCommand: |
       pip install -r requirements.txt
 
-    # 🚀 Start: download Chromium + start gunicorn
+    # Let op: één lange string na >
     startCommand: >
       bash -c "playwright install chromium --with-deps && gunicorn app:app"
 
