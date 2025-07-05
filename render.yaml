@@ -5,18 +5,18 @@ services:
     region: frankfurt
     plan: free
 
-    # ⬇️  Build: dependencies + Playwright (zonder browsers)
+    pythonVersion: "3.11"        # ⇦ dwing Python 3.11 af
+
+    # 📦 Build: alleen Python-packages installeren
     buildCommand: |
       pip install -r requirements.txt
-      # eventueel extra stappen, maar géén playwright install hier nodig
 
-    # ⬇️  Start: installeert headless-Chromium én start Gunicorn
-    startCommand: |
+    # 🚀 Start: download Chromium + start gunicorn
+    startCommand: >
       bash -c "playwright install chromium --with-deps && gunicorn app:app"
 
-    pythonVersion: "3.11"        # ondersteunde versie voor Playwright
     autoDeploy: true
 
     envVars:
       - key: OPENAI_API_KEY
-        sync: false              # sleutel zet je in Render-dashboard
+        sync: false
